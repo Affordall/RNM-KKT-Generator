@@ -1,4 +1,4 @@
-import org.jetbrains.annotations.NotNull;
+
 
 /**
  * Created by v.degtev on 10.11.2017.
@@ -8,25 +8,31 @@ public class CRC {
     private final static String NINE_ZEROS = "000000000";
     private final static String COUNT_KKM = "1";
 
-    public static String calculate(@NotNull String inn, @NotNull String factoryNumber) {
+    public static String calculate(String inn, String... factoryNumbers) {
         if (inn.length() < 12) {
             throw new IllegalArgumentException("ИНН должен быть из 12 цифр. Например: 009715225506");
         }
-        if (factoryNumber.length() < 14) {
-            throw new IllegalArgumentException("Заводской номер кассы должен быть из 14 цифр. Например: 00308300087104");
-        }
-        StringBuilder builder = new StringBuilder();
-        builder.append(NINE_ZEROS); // 9 zeros
-        builder.append(COUNT_KKM); // порядковый номер кассы
-        builder.append(inn); // inn 12 number's
-        //builder.append("009715225506");
-        builder.append("000000"); // 6
-        builder.append(factoryNumber); // factory number 14
-        //builder.append("00307900004456");
 
-        //"000000000100971522550600000000307900004456";
-        int sum = calculateCRC16CCITT(builder.toString());
-        return NINE_ZEROS + COUNT_KKM + "0" + String.valueOf(sum);
+        StringBuilder resultBuilder = new StringBuilder(512);
+
+        for (String factoryNumber : factoryNumbers) {
+            if (factoryNumber.length() < 14) {
+                throw new IllegalArgumentException("Заводской номер кассы должен быть из 14 цифр. Например: 00308300087104");
+            }
+
+            StringBuilder innerBuilder = new StringBuilder();
+            innerBuilder.append(NINE_ZEROS); // 9 zeros
+            innerBuilder.append(COUNT_KKM); // порядковый номер кассы
+            innerBuilder.append(inn); // inn 12 number's
+            innerBuilder.append("000000"); // 6
+            innerBuilder.append(factoryNumber); // factory number 14
+
+            int sum = calculateCRC16CCITT(innerBuilder.toString());
+            String resultRnm = NINE_ZEROS + COUNT_KKM + "0" + String.format("%05d", sum);
+            resultBuilder.append(formatRnm(resultRnm)).append("\n");
+        }
+
+        return resultBuilder.toString();
     }
 
     private static int calculateCRC16CCITT(String inputValue) {
@@ -47,6 +53,11 @@ public class CRC {
 
         crc &= 0xffff;
         return crc;
+    }
+
+    private static String formatRnm(String incomingRnm) {
+        return String.format("%s %s %s %s", incomingRnm.substring(0, 4), incomingRnm.substring(4, 8),
+                incomingRnm.substring(8, 12), incomingRnm.substring(12, 16));
     }
 
 }
